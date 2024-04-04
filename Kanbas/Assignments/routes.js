@@ -1,6 +1,6 @@
 
 import Database from "../Database/index.js";
-import assignments from "../Database/assignments.js";
+
 export default function AssignmentsRoutes(app) {
 
     app.post("/api/courses/:cid/assignments", (req, res) => {
