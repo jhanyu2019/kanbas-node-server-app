@@ -1,6 +1,6 @@
 import * as dao from "./dao.js";
 
-let globalCurrentUser;
+
 export default function UserRoutes(app) {
     const createUser = async (req, res) => {
         const user = await dao.createUser(req.body);
@@ -17,9 +17,11 @@ export default function UserRoutes(app) {
 
     };
     const findUserById = async (req, res) => {
+        console.log("findUserById called with userId:", req.params.userId);
         const user = await dao.findUserById(req.params.userId);
         res.json(user);
     };
+
     const updateUser = async (req, res) => {
         const { userId } = req.params;
         const status = await dao.updateUser(userId, req.body);
@@ -34,29 +36,32 @@ export default function UserRoutes(app) {
         }
         const currentUser = await dao.createUser(req.body);
         req.session["currentUser"] = currentUser;
-        globalCurrentUser = currentUser;
+
         res.json(currentUser);
     };
     const signin = async (req, res) => {
+        console.log("signin called with body:", req.body);
         const { username, password } = req.body;
-        const currentUser = await dao.findUserByCredentials(username, password);
-        if (currentUser) {
-            req.session["currentUser"] = currentUser;
-            globalCurrentUser = currentUser;
-            res.json(currentUser);
+        console.log('Attempting to sign in with', username, password);
+        const user = await dao.findUserByCredentials(username, password);
+        if (user) {
+            req.session["currentUser"] = user;
+            res.json(user);
+        } else {
+            console.log('No user found or incorrect password for', username);
+            res.status(401).send('Unauthorized');
+        }
+    };
+
+
+    const profile = async (req, res) => {
+        if (req.session && req.session["currentUser"]) {
+            res.json(req.session["currentUser"]);
         } else {
             res.sendStatus(401);
         }
     };
-    const profile = async (req, res) => {
-        let currentUser = req.session["currentUser"];
-        currentUser = globalCurrentUser
-        if (!currentUser) {
-            res.sendStatus(401);
-            return;
-        }
-        res.json(currentUser);
-    };
+
     const signout = (req, res) => {
         req.session.destroy();
         res.sendStatus(200);
@@ -68,9 +73,10 @@ export default function UserRoutes(app) {
     app.get("/api/users/:userId", findUserById);
     app.put("/api/users/:userId", updateUser);
     app.delete("/api/users/:userId", deleteUser);
+
     app.post("/api/users/signup", signup);
     app.post("/api/users/signin", signin);
     app.post("/api/users/signout", signout);
     app.post("/api/users/profile", profile);
-    app.put("/api/users/:userId", updateUser);
+
 }
