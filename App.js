@@ -17,14 +17,22 @@ mongoose.connect(CONNECTION_STRING);
 
 const app = express()
 
-app.use(
-    cors({
-             credentials: true,
-             origin: [process.env.FRONTEND_URL, "http://localhost:3000"]
+// CORS configuration
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    "http://localhost:3000"
+];
+app.use(cors({
+                 credentials: true,
+                 origin: (origin, callback) => {
 
-         })
-);
-
+                     if (!origin || allowedOrigins.includes(origin)) {
+                         callback(null, true);
+                     } else {
+                         callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+                     }
+                 }
+             }));
 
 app.use(express.json());
 
